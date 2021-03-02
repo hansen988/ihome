@@ -23,17 +23,6 @@ body {
     line-height: 35px;
     font-size: 20px;
 }
-.manjianwenzi{
-    color:black;
-    float: left;
-    width:20%
-}
-.manjianshu{
-    color:red;
-    float: right;
-    width:80%;
-    text-align: right;
-}
 .nav-btn {
     position: absolute; 
     top: 0;

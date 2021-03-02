@@ -15,18 +15,16 @@ function generateUUID() {
     });
     return uuid;
 }
-var imageCodeId = ""
-var preImageCodeId = ""
+
 // 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
 function generateImageCode() {
-    // 1. 生成编号
-    imageCodeId = generateUUID()
-    // 2. 设置页面中图片验证码img标签的src属性
-    var url = "/api/v1.0/imagecode?cur=" + imageCodeId + "&pre=" + preImageCodeId
-    // 找到image-code标签下的img标签，并设置src的属性值
-    $(".image-code>img").attr("src", url)
-    preImageCodeId = imageCodeId
+    // 生成一个编号
+    // 严格一点的使用uuid保证编号唯一， 不是很严谨的情况下，也可以使用时间戳
+    imageCodeId = generateUUID();
 
+    // 设置页面中图片验证码img标签的src属性
+    var imageCodeUrl = "/api/v1.0/imagecode/" + imageCodeId;
+    $(".image-code>img").attr("src", imageCodeUrl);
 }
 
 function sendSMSCode() {
@@ -47,46 +45,41 @@ function sendSMSCode() {
         return;
     }
 
-    var params = {
-        "mobile": mobile,
-        "image_code": imageCode,
-        "image_code_id": imageCodeId
+    // 通过ajax方式向后端接口发送请求，让后端发送短信验证码
+    var req = {
+        text: imageCode, // 用户填写的图片验证码
+        id: imageCodeId // 图片验证码的编号
     }
-
-    //  通过ajax方式向后端接口发送请求，让后端发送短信验证码
-    $.ajax({
-        url: "/api/v1.0/smscode",
-        type: "post",
-        data: JSON.stringify(params),
-        headers: {
-            "X-CSRFToken": getCookie("csrf_token")  //获取当前浏览器中cookie中的csrf_token
-        },
-        contentType: "application/json",
-        success: function (resp) {
-            if (resp.errno == "0") {
-                // 代表发送成功
-                var num = 60
-                var t = setInterval(function () {
-                    if (num == 1) {
-                        // 倒计时结束,将当前倒计时给清除掉
-                        clearInterval(t)
-                        $(".phonecode-a").attr("onclick", "sendSMSCode();");
-                        $(".phonecode-a").html("获取验证码")
-                    }else {
-                        // 正在倒计时
-                        num -= 1
-                        $(".phonecode-a").html(num + "秒")
-                    }
-                }, 1000, 60)
-            }else {
-                generateImageCode()
-                // 将发送短信的按钮置为可以点击
-                $(".phonecode-a").attr("onclick", "sendSMSCode();");
-                // 发送短信验证码失败
-                alert(resp.errmsg)
-            }
+    $.get("/api/v1.0/smscode/"+mobile, req, function (resp) {
+        // 表示后端发送短信成功
+        if (resp.errno == "0") {
+            // 倒计时60秒，60秒后允许用户再次点击发送短信验证码的按钮
+            var num = 60;
+            // 设置一个计时器
+            var t = setInterval(function () {
+                if (num == 1) {
+                    // 如果计时器到最后, 清除计时器对象
+                    clearInterval(t);
+                    // 将点击获取验证码的按钮展示的文本回复成原始文本
+                    $(".phonecode-a").html("获取验证码");
+                    // 将点击按钮的onclick事件函数恢复回去
+                    $(".phonecode-a").attr("onclick", "sendSMSCode();");
+                } else {
+                    num -= 1;
+                    // 展示倒计时信息
+                    $(".phonecode-a").html(num+"秒");
+                }
+            }, 1000, 60)
+        } else {
+            // 表示后端出现了错误，可以将错误信息展示到前端页面中
+            $("#phone-code-err span").html(resp.errmsg);
+            $("#phone-code-err").show();
+            // 将点击按钮的onclick事件函数恢复回去
+            $(".phonecode-a").attr("onclick", "sendSMSCode();");
         }
-    })
+
+    }, "json");
+
 }
 
 $(document).ready(function() {
@@ -107,68 +100,72 @@ $(document).ready(function() {
     $("#password2").focus(function(){
         $("#password2-err").hide();
     });
-
-    // 注册的提交(判断参数是否为空)
-    
-    $(".form-register").submit(function (e) {
-        e.preventDefault()
-
-        // 取到用户输入的内容
-        var mobile = $("#mobile").val()
-        var phonecode = $("#phonecode").val()
-        var password = $("#password").val()
-        var password2 = $("#password2").val()
-
+    $(".form-register").submit(function(e){
+        // 阻止浏览器对于表单的默认行为，即阻止浏览器把表单的数据转换为表单格式kye=val&key=val的字符串发送到后端
+        e.preventDefault();
+        var mobile = $("#mobile").val();
+        var phoneCode = $("#phonecode").val();
+        var passwd = $("#password").val();
+        var passwd2 = $("#password2").val();
         if (!mobile) {
             $("#mobile-err span").html("请填写正确的手机号！");
             $("#mobile-err").show();
             return;
-        }
-        if (!phonecode) {
+        } 
+        if (!phoneCode) {
             $("#phone-code-err span").html("请填写短信验证码！");
             $("#phone-code-err").show();
             return;
         }
-        if (!password) {
+        if (!passwd) {
             $("#password-err span").html("请填写密码!");
             $("#password-err").show();
             return;
         }
-        if (password != password2) {
+        if (passwd != passwd2) {
             $("#password2-err span").html("两次密码不一致!");
             $("#password2-err").show();
             return;
         }
 
-        var params = {
+        // 构造发送到后端的数据 方式一
+        var req = {
             "mobile": mobile,
-            "phonecode": phonecode,
-            "password": password,
-        }
+            "password": passwd,
+            "sms_code": phoneCode
+        };
 
-        // 方式2：拼接参数
-        var params = {}
-        $(this).serializeArray().map(function (x) {
-            params[x.name] = x.value
-        })
+        // // 方式二
+        // var req = {};
+        // // 将表单中的全部字段值保存到req对象中
+        // $(".form-register").serializeArray().map(function(x){req[x.name]=x.value});
+        // req == {mobile: "18511111111", imagecode: "3qbv", phonecode: "246810", password: "123456", password2: "123456"}
 
+
+        // 向后端发送注册请求
         $.ajax({
-            url:"/api/v1.0/user",
-            type: "post",
+            url: "/api/v1.0/users",
+            type: "POST",
+            contentType: "application/json",  // 指明发送到后端的数据格式是json
+            data: JSON.stringify(req),
             headers: {
-                "X-CSRFToken": getCookie("csrf_token")
+                "X-CSRFToken": getCookie("csrf_token") // 后端开启了csrf防护，所以前端发送json数据的时候，需要包含这个请求头
             },
-            data: JSON.stringify(params),
-            contentType: "application/json",
-            success: function (resp) {
-                if (resp.errno == "0"){
-                    // 直接回到首页
-                    location.href = "/index.html"
-                }else {
-                    $("#password2-err span").html(resp.errmsg)
-                    $("#password2-err").show()
+            dataType: "json", // 指明后端返回到前端的数据是json格式的
+            success: function(resp){
+                if (resp.errno == "0") {
+                    // 表示注册成功,跳转到主页
+                    location.href = "/index.html";
+                } else if (resp.errno == "4101") {
+                    // 表示用户注册成功，但是用户的登录状态后端未保存，所以跳转到登录页面
+                    location.href = "/login.html";
+                } else {
+                    // 在页面中展示错误信息
+                    $("#password2-err span").html(resp.errmsg);
+                    $("#password2-err").show();
                 }
             }
-        })
-    })
+        });
+
+    });
 })

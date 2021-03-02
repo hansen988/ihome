@@ -6,87 +6,91 @@ function getCookie(name) {
 $(document).ready(function(){
     // $('.popup_con').fadeIn('fast');
     // $('.popup_con').fadeOut('fast');
-
-    // 在页面加载完毕之后获取区域信息
     $.get("/api/v1.0/areas", function (resp) {
-        if (resp.errno == "0") {
-            // 将数据添加到select的标签中
-            // for(var i=0; i<resp.data.length; i++) {
-            //     // <option value="1">东城区</option>
-            //     var areaId = resp.data[i].aid
-            //     var areaName = resp.data[i].aname
-            //     $("#area-id").append('<option value="' + areaId + '">' + areaName + '</option>')
+        if ("0" == resp.errno) {
+            // // 表示查询到了数据,修改前端页面
+            // for (var i=0; i<resp.data.length; i++) {
+            //     // 向页面中追加标签
+            //     var areaId = resp.data[i].aid;
+            //     var areaName = resp.data[i].aname;
+            //     $("#area-id").append('<option value="'+ areaId +'">'+ areaName +'</option>');
             // }
 
-            var html = template("areas-tmpl", {"areas": resp.data})
-            $("#area-id").html(html)
-        }else {
-            alert(resp.errmsg)
+            // 使用前端模板
+            rendered_html = template("areas-tmpl", {areas: resp.data});
+            $("#area-id").html(rendered_html);
+        } else {
+            alert(resp.errmsg);
         }
-    })
+    }, "json");
 
-    // 处理房屋基本信息提交的表单数据
+    // 处理房屋基本信息的表单数据
     $("#form-house-info").submit(function (e) {
-        e.preventDefault()
+        e.preventDefault();
+        // 检验表单数据是否完整
+        // 将表单的数据形成json，向后端发送请求
+        var formData = {};
+        $(this).serializeArray().map(function (x) { formData[x.name] = x.value });
 
-        var params = {}
-        // 获取所有需要提交的字段
-        $(this).serializeArray().map(function (x) {
-            params[x.name] = x.value
-        })
+        // 对于房屋设施的checkbox需要特殊处理
+        var facility = [];
+        // $("input:checkbox:checked[name=facility]").each(function(i, x){ facility[i]=x.value });
+        $(":checked[name=facility]").each(function(i, x){ facility[i]=x.value });
 
-        var facility = []
-        // 处理facility参数 facility: [1, 2, 3]
-        $(":checkbox:checked[name=facility]").each(function (i, x) {
-            facility[i] = x.value
-        })
-        params["facility"] = facility
+        formData.facility = facility;
 
+        // 使用ajax向后端发送请求
         $.ajax({
             url: "/api/v1.0/houses",
             type: "post",
+            data: JSON.stringify(formData),
             contentType: "application/json",
+            dataType: "json",
             headers: {
                 "X-CSRFToken": getCookie("csrf_token")
             },
-            data: JSON.stringify(params),
-            success: function (resp) {
-                if (resp.errno == "0") {
-                    $("#form-house-info").hide()
-                    $("#form-house-image").show()
-                    // 在上传房屋基本信息成功之后，去设置房屋的id，以便在上传房屋图片的时候使用
-                    $("#house-id").val(resp.data.house_id)
-                }else if (resp.errno == "4101") {
-                    location.href = "/login.html"
-                }else {
-                    alert(resp.errmsg)
+            success: function(resp){
+                if ("4101" == resp.errno) {
+                    location.href = "/login.html";
+                } else if ("0" == resp.errno) {
+                    // 后端保存数据成功
+                    // 隐藏基本信息的表单
+                    $("#form-house-info").hide();
+                    // 显示上传图片的表单
+                    $("#form-house-image").show();
+                    // 设置图片表单对应的房屋编号那个隐藏字段
+                    $("#house-id").val(resp.data.house_id);
+                } else {
+                    alert(resp.errmsg);
                 }
             }
-        })
+        });
     })
-
-    // $("#form-house-info").hide()
-    // $("#form-house-image").show()
-    // // 在上传房屋基本信息成功之后，去设置房屋的id，以便在上传房屋图片的时候使用
-    // $("#house-id").val(1)
 
     // 处理图片表单的数据
     $("#form-house-image").submit(function (e) {
-        e.preventDefault()
-
-        var house_id = $("#house-id").val()
-
+        e.preventDefault();
+        var house_id = $("#house-id").val();
+        // 使用jquery.form插件，对表单进行异步提交，通过这样的方式，可以添加自定义的回调函数
         $(this).ajaxSubmit({
-            url: "/api/v1.0/houses/" + house_id + "/images",
+            url: "/api/v1.0/houses/"+house_id+"/images",
             type: "post",
-            headers:{
+            headers: {
                 "X-CSRFToken": getCookie("csrf_token")
             },
+            dataType: "json",
             success: function (resp) {
-                if (resp.errno == "0") {
-                    $(".house-image-cons").append('<img src="' + resp.data.url + '">')
+                if ("4101" == resp.errno) {
+                    location.href = "/login.html";
+                } else if ("0" == resp.errno) {
+                    // 在前端中添加一个img标签，展示上传的图片
+                    $(".house-image-cons").append('<img src="'+ resp.data.url+'">');
+                } else {
+                    alert(resp.errmsg);
                 }
             }
         })
     })
+
+
 })

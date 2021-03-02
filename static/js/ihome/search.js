@@ -4,7 +4,6 @@ var total_page = 1;  // 总页数
 var house_data_querying = true;   // 是否正在向后台获取数据
 
 // 解析url中的查询字符串
-// https://www.baidu.com/index/index.html?name=aaa
 function decodeQuery(){
     var search = decodeURI(document.location.search);
     return search.replace(/(^\?)/, '').split('&').reduce(function(result, item){
@@ -20,10 +19,10 @@ function updateFilterDateDisplay() {
     var endDate = $("#end-date").val();
     var $filterDateTitle = $(".filter-title-bar>.filter-title").eq(0).children("span").eq(0);
     if (startDate) {
-        var text = startDate + "~" + endDate;
+        var text = startDate.substr(5) + "/" + endDate.substr(5);
         $filterDateTitle.html(text);
     } else {
-        $filterDateTitle.html("价格区间");
+        $filterDateTitle.html("入住日期");
     }
 }
 
@@ -43,27 +42,21 @@ function updateHouseData(action) {
         sd:startDate,
         ed:endDate,
         sk:sortKey,
-        p:next_page // 1 > 2 > 2
+        p:next_page
     };
-    // 获取房屋列表信息
-
-    $.get("/api/v1.0/taocans", params, function (resp) {
-        // 将正在加载数据的标志设置为false
+    $.get("/api/v1.0/houses", params, function(resp){
         house_data_querying = false;
-        if (resp.errno == "0") {
-            // 显示数据
-            total_page = resp.data.total_page
-            if (total_page == 0) {
-                $(".house-list").html("未查询到数据")
-            }else {
-                // 为什么要给cur_page赋值
-                cur_page = next_page
-                if (action == "renew") {
-                    // 代表是重新加载数据，直接设置html
-                    $(".house-list").html(template("house-list-tmpl", {"taocans": resp.data.taocans}))
-                }else {
-                    // 代表是加载后面几页，需要将后面的数据拼接到当前数据上
-                    $(".house-list").append(template("house-list-tmpl", {"taocans": resp.data.taocans}))
+        if ("0" == resp.errno) {
+            if ("0" == resp.data.total_page) {
+                $(".house-list").html("暂时没有符合您查询的房屋信息。");
+            } else {
+                total_page = resp.data.total_page;
+                if ("renew" == action) {
+                    cur_page = 1;
+                    $(".house-list").html(template("house-list-tmpl", {houses:resp.data.houses}));
+                } else {
+                    cur_page = next_page;
+                    $(".house-list").append(template("house-list-tmpl", {houses: resp.data.houses}));
                 }
             }
         }
@@ -100,41 +93,31 @@ $(document).ready(function(){
                     $(".filter-area").append('<li area-id="'+ data.data[i].aid+'">'+ data.data[i].aname+'</li>');
                 }
             }
-            // 在页面添加好城区选项信息后，更新展示房屋列表信息
             updateHouseData("renew");
-
-        }
-    });
             var windowHeight = $(window).height()
-            // 为窗口的滚动添加事件函数
             window.onscroll=function(){
                 // var a = document.documentElement.scrollTop==0? document.body.clientHeight : document.documentElement.clientHeight;
                 var b = document.documentElement.scrollTop==0? document.body.scrollTop : document.documentElement.scrollTop;
                 var c = document.documentElement.scrollTop==0? document.body.scrollHeight : document.documentElement.scrollHeight;
-                // 如果滚动到接近窗口底部
                 if(c-b<windowHeight+50){
-                    // 如果没有正在向后端发送查询房屋列表信息的请求
                     if (!house_data_querying) {
-                        // 将正在向后端查询房屋列表信息的标志设置为真
                         house_data_querying = true;
-                        // 如果当前页面数还没到达总页数
                         if(cur_page < total_page) {
-                            // 将要查询的页数设置为当前页数加1
                             next_page = cur_page + 1;
-                            // 向后端发送请求，查询下一页房屋数据// 向后端发送请求，查询下一页房屋数据
                             updateHouseData();
-                        } else {
-                            house_data_querying = false;
                         }
                     }
                 }
             }
-    // $(".input-daterange").datepicker({
-    //     format: "yyyy-mm-dd",
-    //     startDate: "today",
-    //     language: "zh-CN",
-    //     autoclose: true
-    // });
+        }
+    });
+
+    $(".input-daterange").datepicker({
+        format: "yyyy-mm-dd",
+        startDate: "today",
+        language: "zh-CN",
+        autoclose: true
+    });
     var $filterItem = $(".filter-item-bar>.filter-item");
     $(".filter-title-bar").on("click", ".filter-title", function(e){
         var index = $(this).index();
