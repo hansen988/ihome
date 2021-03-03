@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	G_server_addr  string //服务器ip地址
+	//G_server_addr  string //服务器ip地址
 	G_server_port  string //服务器端口
 	G_redis_addr   string //redis ip地址
 	G_redis_port   string //redis port端口
@@ -35,7 +35,7 @@ func InitConfig() {
 	// 	return
 	// }
 	G_image_addr = appconf.String("imageaddr")
-	G_server_addr = appconf.String("httpaddr")
+	//G_server_addr = appconf.String("httpaddr")
 	G_server_port = appconf.String("httpport")
 	G_redis_addr = appconf.String("redisaddr")
 	G_redis_port = appconf.String("redisport")
