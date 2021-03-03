@@ -144,7 +144,7 @@ $(document).ready(function() {
 
         // 向后端发送注册请求
         $.ajax({
-            url: "/api/v1.0/users",
+            url: "/api/v1.0/user",
             type: "POST",
             contentType: "application/json",  // 指明发送到后端的数据格式是json
             data: JSON.stringify(req),
