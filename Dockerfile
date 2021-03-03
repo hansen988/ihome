@@ -10,7 +10,7 @@ WORKDIR /go/src/ihome
 COPY . /go/src/ihome
 #下载beego和bee
 RUN go env -w GOPROXY=https://goproxy.cn
-RUN go get github.com/astaxie/beego && go get github.com/beego/bee && go get github.com/go-sql-driver/mysql && go get -u github.com/beego/beego/v2/server/web/session/redis
+RUN go get github.com/astaxie/beego && go get github.com/beego/bee && go get github.com/go-sql-driver/mysql && go get -u github.com/beego/beego/v2/server/web/session/redis && go get github.com/prometheus/client_golang/prometheus@v1.7.0
 #端口
 EXPOSE 8080
 #运行
