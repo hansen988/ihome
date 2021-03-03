@@ -15,6 +15,7 @@ var (
 	G_mysql_addr   string //mysql ip 地址
 	G_mysql_port   string //mysql 端口
 	G_mysql_dbname string //mysql db name
+	G_image_addr   string
 )
 
 func InitConfig() {
@@ -33,6 +34,7 @@ func InitConfig() {
 	// 	beego.Debug(err)
 	// 	return
 	// }
+	G_image_addr = appconf.String("imageaddr")
 	G_server_addr = appconf.String("httpaddr")
 	G_server_port = appconf.String("httpport")
 	G_redis_addr = appconf.String("redisaddr")
