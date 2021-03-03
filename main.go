@@ -25,7 +25,7 @@ import (
 // 	// create table
 // 	//第二个参数是强制更新数据库
 // 	//第三个参数是如果没有则同步
-// 	// orm.RunSyncdb("default", false, true)
+// 	// //orm.RunSyncdb("default", false, true)
 // }
 
 func main() {
