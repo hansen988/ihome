@@ -198,7 +198,7 @@ func init() {
 	orm.RegisterDriver("mysql", orm.DRMySQL)
 
 	// set default database
-	err := orm.RegisterDataBase("default", "mysql", "root:mysql@tcp("+utils.G_mysql_addr+":"+utils.G_mysql_port+")/"+utils.G_mysql_dbname+"?charset=utf8")
+	err := orm.RegisterDataBase("default", "mysql", "root:123456@tcp("+utils.G_mysql_addr+":"+utils.G_mysql_port+")/"+utils.G_mysql_dbname+"?charset=utf8")
 	if err != nil {
 		fmt.Println(err)
 	}
