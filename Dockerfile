@@ -1,24 +1,16 @@
 
 
+
 FROM golang:latest
- 
 #创建工作目录
-RUN mkdir -p /go/src/ihome/static/
- 
+RUN mkdir -p /go/src/ihome
 #进入工作目录
 WORKDIR /go/src/ihome
- 
-#将DockerFile文件所在目录下的所有文件复制到指定位置
+#将当前目录下的所有文件复制到指定位置
 COPY . /go/src/ihome
- 
-#下载beego、bee以及mysql驱动
-#RUN go get github.com/astaxie/beego && go get github.com/beego/bee && go get github.com/go-sql-driver/mysql
- 
+#下载beego和bee
+RUN go get github.com/astaxie/beego && go get github.com/beego/bee && go get github.com/go-sql-driver/mysql && go get -u github.com/beego/beego/v2/server/web/session/redis
 #端口
 EXPOSE 8080
- 
-#CMD ["bee","run"]
-#修改docker_test文件的权限
-RUN chmod 777 ./ihome
-#执行docker_test文件
-ENTRYPOINT ["./ihome"]
+#运行
+CMD ["bee", "run"]
