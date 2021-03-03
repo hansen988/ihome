@@ -9,6 +9,7 @@ WORKDIR /go/src/ihome
 #将当前目录下的所有文件复制到指定位置
 COPY . /go/src/ihome
 #下载beego和bee
+RUN go env -w GOPROXY=https://goproxy.cn
 RUN go get github.com/astaxie/beego && go get github.com/beego/bee && go get github.com/go-sql-driver/mysql && go get -u github.com/beego/beego/v2/server/web/session/redis
 #端口
 EXPOSE 8080
