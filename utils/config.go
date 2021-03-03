@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"os"
+
 	"github.com/astaxie/beego/config"
 )
 
@@ -17,7 +19,16 @@ var (
 
 func InitConfig() {
 	//从配置文件读取配置信息
-	appconf, _ := config.NewConfig("ini", "./conf/app.conf")
+	env := os.Getenv("ENV_CLUSTER")
+	ConfPath := ""
+	if env == "online" {
+		ConfPath = "./conf/online.conf"
+	} else if env == "beta" {
+		ConfPath = "./conf/beta.conf"
+	} else {
+		ConfPath = "./conf/dev.conf"
+	}
+	appconf, _ := config.NewConfig("ini", ConfPath)
 	// if err != nil {
 	// 	beego.Debug(err)
 	// 	return

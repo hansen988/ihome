@@ -1,11 +1,12 @@
 package main
 
 import (
-	_ "ihome/routers"
-	"net/http"
-	"strings"
-
 	_ "ihome/models"
+	_ "ihome/routers"
+	_ "ihome/utils"
+	"net/http"
+	"os"
+	"strings"
 
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/server/web/context"
@@ -28,7 +29,16 @@ import (
 // }
 
 func main() {
-
+	env := os.Getenv("ENV_CLUSTER")
+	ConfPath := ""
+	if env == "online" {
+		ConfPath = "./conf/online.conf"
+	} else if env == "beta" {
+		ConfPath = "./conf/beta.conf"
+	} else {
+		ConfPath = "./conf/dev.conf"
+	}
+	beego.LoadAppConfig("ini", ConfPath)
 	ignoreStaticPath()
 	beego.Run()
 
